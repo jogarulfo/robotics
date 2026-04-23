@@ -350,11 +350,16 @@ class ACT(nn.Module):
             self.encoder_img_feat_input_proj = nn.Conv2d(
                 backbone_model.fc.in_features, config.dim_model, kernel_size=1
             )
+
+        if self.config.conditioning_dim is not None:
+            self.conditioning_proj = nn.Embedding(config.conditioning_dim, config.dim_model)
         # Transformer encoder positional embeddings.
         n_1d_tokens = 1  # for the latent
         if self.config.robot_state_feature:
             n_1d_tokens += 1
         if self.config.env_state_feature:
+            n_1d_tokens += 1
+        if self.config.conditioning_dim is not None:
             n_1d_tokens += 1
         self.encoder_1d_feature_pos_embed = nn.Embedding(n_1d_tokens, config.dim_model)
         if self.config.image_features:
@@ -464,6 +469,17 @@ class ACT(nn.Module):
         # Environment state token.
         if self.config.env_state_feature:
             encoder_in_tokens.append(self.encoder_env_state_input_proj(batch[OBS_ENV_STATE]))
+
+        # Task-conditioning token.
+        if self.config.conditioning_dim is not None:
+            if "conditioning" not in batch:
+                raise ValueError(
+                    "`conditioning` must be present in the batch when `conditioning_dim` is enabled."
+                )
+            conditioning = batch["conditioning"]
+            if isinstance(conditioning, Tensor) and conditioning.dim() > 1:
+                conditioning = conditioning.squeeze(-1)
+            encoder_in_tokens.append(self.conditioning_proj(conditioning.long()))
 
         if self.config.image_features:
             # For a list of images, the H and W may vary but H*W is constant.

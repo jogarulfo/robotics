@@ -23,10 +23,10 @@ lerobot-calibrate    --teleop.type=so101_leader   --teleop.port=/dev/ttyACM1  --
 
 lerobot-teleoperate \
     --robot.type=so101_follower \
-    --robot.port=/dev/ttyACM0 \
+    --robot.port=/dev/ttyACM1 \
     --robot.id=jo_follow \
     --teleop.type=so101_leader \
-    --teleop.port=/dev/ttyACM1 \
+    --teleop.port=/dev/ttyACM0 \
     --teleop.id=jo_lead
 
 #### Setup Camera :
@@ -67,34 +67,34 @@ echo $HF_USER
 
 
 #### record Dataset :
-
+```bash
 lerobot-record   --robot.type=so101_follower \
     --robot.port=/dev/ttyACM1 \
     --robot.id=jo_follow \
-    --robot.cameras="{ front: {type: opencv, index_or_path: /dev/video6, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: /dev/video4, width: 640, height: 480, fps: 30} }" \
+    --robot.cameras="{ wrist: {type: opencv, index_or_path: /dev/video6, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: /dev/video4, width: 640, height: 480, fps: 30} }" \
     --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM0 \
     --teleop.id=jo_lead \
     --display_data=false \
-    --dataset.repo_id=jogarulfo/dataset_cellule_part4  \ 
-    --dataset.num_episodes=10  \
-    --dataset.single_task="Grab the cell and put it in the hole" \
+    --dataset.repo_id=jogarulfo/dataset_MVP_store_cardboard_  \
+    --dataset.num_episodes=8  \
+    --dataset.single_task="Grab the cube and store it in the box" \
     --dataset.episode_time_s=90 \
     --dataset.push_to_hub=false \
     --resume=false
-
+```
 
 delete a dataset locally   :
-rm -r ~/.cache/huggingface/lerobot/jogarulfo/dataset_cellule_part4
+rm -r ~/.cache/huggingface/lerobot/jogarulfo/dataset_MVP_store_cardboard_8
 
 
 lerobot-record       --robot.type=so101_follower     --robot.port=/dev/ttyACM0     --robot.id=jo_follow     --robot.cameras="{ front: {type: opencv, index_or_path: /dev/video6, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: /dev/video4, width: 640, height: 480, fps: 30} }"     --teleop.type=so101_leader     --teleop.port=/dev/ttyACM1     --teleop.id=jo_lead     --display_data=false   --dataset.repo_id=jogarulfo/dataset_cellule_boxv2   --dataset.num_episodes=20  --dataset.single_task="Grab the cell and put it in the box" --dataset.episode_time_s=90 --dataset.push_to_hub=false --resume=false
 
 
 lerobot-edit-dataset \
-    --repo_id jogarulfo/dataset_cellule_ \
+    --repo_id jogarulfo/dataset_MVP_store_cardboard \
     --operation.type merge \
-    --operation.repo_ids "['jogarulfo/dataset_cellule_part1', 'jogarulfo/dataset_cellule_part2', 'jogarulfo/dataset_cellule_part3', 'jogarulfo/dataset_cellule_part4']" \
+    --operation.repo_ids "['jogarulfo/dataset_MVP_store_cardboard_3', 'jogarulfo/dataset_MVP_store_cardboard_4', 'jogarulfo/dataset_MVP_store_cardboard_5', 'jogarulfo/dataset_MVP_store_cardboard_6', 'jogarulfo/dataset_MVP_store_cardboard_7', 'jogarulfo/dataset_MVP_store_cardboard_8', 'jogarulfo/dataset_MVP_store_cardboard_9', 'jogarulfo/dataset_MVP_store_cardboard_10']" \
     --push_to_hub true
 
 
@@ -112,18 +112,20 @@ lerobot-train \
 
 Evaluation of my model :
 
-
+```bash
 lerobot-record   --robot.type=so101_follower \
     --robot.port=/dev/ttyACM0 \
     --robot.id=jo_follow \
     --robot.cameras="{ front: {type: opencv, index_or_path: /dev/video6, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: /dev/video4, width: 640, height: 480, fps: 30} }" \
     --display_data=true \
-    --dataset.repo_id=jogarulfo/eval_dataset_cellule_  \
-    --dataset.single_task="Grab the cell and put it in the hole" \
-    --policy.path=jogarulfo/act_battery_cell \
-    --dataset.reset_time=10
+    --dataset.repo_id=jogarulfo/dataset_MVP_store_cardboard_1  \
+    --dataset.single_task="Grab the cube and store it in the box" \
+    --dataset.reset_time=8
+```
 
+rm -r ~/.cache/huggingface/lerobot/jogarulfo/dataset_MVP_store_cardboard_1
 
+```bash
 HF_HUB_OFFLINE=1 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM0 \
@@ -135,3 +137,4 @@ HF_HUB_OFFLINE=1 lerobot-record \
   --policy.type=act \
   --policy.pretrained_path=jogarulfo/act_battery_cell \
   --dataset.reset_time=10
+```

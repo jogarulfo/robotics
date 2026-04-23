@@ -1,6 +1,6 @@
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
-local_repo_id = "jogarulfo/dataset_cellule_boxv2"
+local_repo_id = "jogarulfo/dataset_MVP_store_cardboard_1"
 
 def push_dataset():
     # 2. Charger le dataset depuis le cache local

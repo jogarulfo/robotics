@@ -401,14 +401,15 @@ class LeRobotDatasetMetadata:
         episode_length: int,
         episode_tasks: list[str],
         episode_stats: dict[str, dict],
-        episode_metadata: dict,
+        episode_metadata: dict | None = None,
     ) -> None:
         episode_dict = {
             "episode_index": episode_index,
             "tasks": episode_tasks,
             "length": episode_length,
         }
-        episode_dict.update(episode_metadata)
+        if episode_metadata:
+            episode_dict.update(episode_metadata)
         episode_dict.update(flatten_dict({"stats": episode_stats}))
         self._save_episode_metadata(episode_dict)
 
@@ -720,6 +721,7 @@ class LeRobotDataset(torch.utils.data.Dataset):
         self._lazy_loading = False
         self._recorded_frames = self.meta.total_frames
         self._writer_closed_for_reading = False
+        self._episode_conditioning: dict[int, int] = {}
 
         # Load actual data
         try:
@@ -1079,6 +1081,13 @@ class LeRobotDataset(torch.utils.data.Dataset):
         task_idx = item["task_index"].item()
         item["task"] = self.meta.tasks.iloc[task_idx].name
 
+        if ep_idx in self._episode_conditioning:
+            item["conditioning"] = self._episode_conditioning[ep_idx]
+        elif self.meta.episodes is not None and ep_idx < len(self.meta.episodes):
+            episode_meta = self.meta.episodes[ep_idx]
+            if "conditioning" in episode_meta and episode_meta["conditioning"] is not None:
+                item["conditioning"] = episode_meta["conditioning"]
+
         # add subtask information if available
         if "subtask_index" in self.features and self.meta.subtasks is not None:
             subtask_idx = item["subtask_index"].item()
@@ -1200,6 +1209,9 @@ class LeRobotDataset(torch.utils.data.Dataset):
         """
         episode_buffer = episode_data if episode_data is not None else self.episode_buffer
 
+        # Episode-level metadata that should be persisted with the episode, not treated as a frame feature.
+        conditioning = episode_buffer.pop("conditioning", None)
+
         validate_episode_buffer(episode_buffer, self.meta.total_episodes, self.features)
 
         # size and task are special cases that won't be added to hf_dataset
@@ -1213,6 +1225,9 @@ class LeRobotDataset(torch.utils.data.Dataset):
 
         # Update tasks and task indices with new tasks if any
         self.meta.save_episode_tasks(episode_tasks)
+
+        if conditioning is None and len(episode_tasks) == 1:
+            conditioning = self.meta.get_task_index(episode_tasks[0])
 
         # Given tasks in natural language, find their corresponding task indices
         episode_buffer["task_index"] = np.array([self.meta.get_task_index(task) for task in tasks])
@@ -1270,6 +1285,10 @@ class LeRobotDataset(torch.utils.data.Dataset):
                     ep_metadata.update(self._save_episode_video(video_key, episode_index))
 
         # `meta.save_episode` need to be executed after encoding the videos
+        if conditioning is not None:
+            self._episode_conditioning[episode_index] = int(conditioning)
+            ep_metadata["conditioning"] = int(conditioning)
+
         self.meta.save_episode(episode_index, episode_length, episode_tasks, ep_stats, ep_metadata)
 
         if has_video_keys and use_batched_encoding:
@@ -1620,6 +1639,7 @@ class LeRobotDataset(torch.utils.data.Dataset):
         obj._lazy_loading = False
         obj._recorded_frames = 0
         obj._writer_closed_for_reading = False
+        obj._episode_conditioning = {}
         return obj
 
 

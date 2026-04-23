@@ -86,6 +86,8 @@ class ACTConfig(PreTrainedConfig):
     chunk_size: int = 100
     n_action_steps: int = 100
 
+    conditioning_dim: int | None = None
+
     normalization_mapping: dict[str, NormalizationMode] = field(
         default_factory=lambda: {
             "VISUAL": NormalizationMode.MEAN_STD,

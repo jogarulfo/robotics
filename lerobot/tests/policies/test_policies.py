@@ -321,6 +321,35 @@ def test_multikey_construction(multikey: bool):
     )
 
 
+def test_act_conditioning_token_forward():
+    input_features = {
+        OBS_STATE: PolicyFeature(type=FeatureType.STATE, shape=(6,)),
+        f"{OBS_IMAGES}.cam": PolicyFeature(type=FeatureType.VISUAL, shape=(3, 96, 96)),
+    }
+    output_features = {
+        ACTION: PolicyFeature(type=FeatureType.ACTION, shape=(4,)),
+    }
+    config = ACTConfig(
+        input_features=input_features,
+        output_features=output_features,
+        use_vae=False,
+        conditioning_dim=8,
+        pretrained_backbone_weights=None,
+    )
+    policy = ACTPolicy(config)
+
+    batch = {
+        OBS_STATE: torch.randn(1, 6),
+        OBS_IMAGES: [torch.randn(1, 3, 96, 96)],
+        "conditioning": torch.tensor([3], dtype=torch.long),
+    }
+
+    actions, latent = policy.model(batch)
+
+    assert actions.shape == (1, config.chunk_size, 4)
+    assert latent == (None, None)
+
+
 @pytest.mark.parametrize(
     "ds_repo_id, policy_name, policy_kwargs, file_name_extra",
     [
