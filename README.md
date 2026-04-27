@@ -1,2 +1,5 @@
-Yoooo 
-I will keep the cgnage hear: first objectif is to teach lerobot iterative task w the same model ... I would want in fine to have iterative task without needing to specify the number of tasks.
+# LaPetiteMain
+
+Understanding the limites of lerobot in industrial task. Seeing if repetition is possible long term with the same model, and if we can learn iterative task with the same model.
+
+Final goal : generalise iterative task without adding the number of action
